@@ -1,0 +1,20 @@
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- 背景円 -->
+  <circle cx="512" cy="512" r="512" fill="#4CAF50"/>
+  
+  <!-- フォーク -->
+  <path d="M320 200 L320 600 M300 200 L340 200 M310 220 L330 220 M310 240 L330 240" 
+        stroke="white" stroke-width="12" stroke-linecap="round"/>
+  
+  <!-- ナイフ -->
+  <path d="M700 200 L700 600 M680 200 L720 200" 
+        stroke="white" stroke-width="12" stroke-linecap="round"/>
+  
+  <!-- プレート -->
+  <circle cx="512" cy="450" r="120" fill="white" opacity="0.9"/>
+  <circle cx="512" cy="450" r="100" fill="#4CAF50" opacity="0.1"/>
+  
+  <!-- カロリー表示 -->
+  <rect x="450" y="620" width="124" height="40" rx="20" fill="white"/>
+  <text x="512" y="645" text-anchor="middle" fill="#4CAF50" font-family="Arial, sans-serif" font-size="16" font-weight="bold">CAL</text>
+</svg> 
