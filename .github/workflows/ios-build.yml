@@ -18,7 +18,7 @@ jobs:
     - name: Setup Flutter
       uses: subosito/flutter-action@v2
       with:
-        flutter-version: '3.8.1'
+        flutter-version: '3.19.0'
         channel: 'stable'
         
     - name: Install dependencies
@@ -30,11 +30,11 @@ jobs:
     - name: Run tests
       run: flutter test
       
-    - name: Build iOS
-      run: flutter build ios --release
+    - name: Build iOS (Debug)
+      run: flutter build ios --debug
       
-    - name: Build IPA
-      run: flutter build ipa --release
+    - name: Build IPA (Debug)
+      run: flutter build ipa --debug
       
     - name: Upload IPA artifact
       uses: actions/upload-artifact@v4
