@@ -21,11 +21,11 @@ jobs:
     - name: Install dependencies
       run: flutter pub get
       
-    - name: Build iOS
-      run: flutter build ios --debug
+    - name: Build iOS Simulator
+      run: flutter build ios --debug --simulator
       
-    - name: Build IPA
-      run: flutter build ipa --debug
+    - name: Build IPA (Simulator)
+      run: flutter build ipa --debug --simulator
       
     - name: Upload artifacts
       uses: actions/upload-artifact@v4
