@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'data_storage.dart';
+import 'privacy_policy_page.dart';
+import 'home_page.dart';
+import '../services/locale_service.dart';
+import 'package:calorie_note/l10n/app_localizations.dart';
 
 class InputPage extends StatefulWidget {
   const InputPage({super.key});
@@ -29,8 +33,52 @@ class _InputPageState extends State<InputPage> {
     final targetWeight = double.tryParse(_targetWeightController.text);
 
     if (age == null || weight == null || days == null || targetWeight == null || height == null) {
+      final t = AppLocalizations.of(context);
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('すべての項目を入力してください')),
+        SnackBar(content: Text(t?.allFieldsRequired ?? 'すべての項目を入力してください')),
+      );
+      return;
+    }
+
+    // 入力値の範囲チェック
+    if (age < 10 || age > 120) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('年齢は10〜120歳の範囲で入力してください')),
+      );
+      return;
+    }
+
+    if (weight <= 0 || weight > 500) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('体重は1〜500kgの範囲で入力してください')),
+      );
+      return;
+    }
+
+    if (height <= 0 || height > 300) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('身長は1〜300cmの範囲で入力してください')),
+      );
+      return;
+    }
+
+    if (targetWeight <= 0 || targetWeight > 500) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('目標体重は1〜500kgの範囲で入力してください')),
+      );
+      return;
+    }
+
+    if (days <= 0 || days > 3650) { // 10年以内
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('目標期間は1〜3650日の範囲で入力してください')),
+      );
+      return;
+    }
+
+    if (weight == targetWeight) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('現在の体重と目標体重が同じです')),
       );
       return;
     }
@@ -73,24 +121,21 @@ class _InputPageState extends State<InputPage> {
 
   void _completeSetup() {
     if (_recommendedCalories != null) {
-      // 完了メッセージを表示
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('設定を変更しました'),
-          backgroundColor: Colors.green,
-          duration: Duration(seconds: 2),
-        ),
-      );
-      
-      // 少し遅延させてからホームページに戻る
-      Future.delayed(const Duration(milliseconds: 500), () {
-        if (mounted) {
-          Navigator.pushReplacementNamed(context, '/home');
-        }
-      });
+      // ホーム画面で完了メッセージを表示するため、引数付きで遷移
+      if (mounted) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (_) => const HomePage(),
+            settings: RouteSettings(arguments: {
+              'settingsChanged': true,
+            }),
+          ),
+        );
+      }
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('まずカロリーを計算してください')),
+        SnackBar(content: Text(AppLocalizations.of(context)?.calculateFirst ?? 'まずカロリーを計算してください')),
       );
     }
   }
@@ -99,9 +144,9 @@ class _InputPageState extends State<InputPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          '体重目標変更',
-          style: TextStyle(
+        title: Text(
+          AppLocalizations.of(context)?.setupTitle ?? '体重目標変更',
+          style: const TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.bold,
             color: Colors.white,
@@ -110,6 +155,64 @@ class _InputPageState extends State<InputPage> {
         backgroundColor: Colors.lightBlue,
         foregroundColor: Colors.white,
         elevation: 0,
+        actions: [
+          TextButton.icon(
+            onPressed: () async {
+              final selected = await showModalBottomSheet<Locale?>(
+                context: context,
+                shape: const RoundedRectangleBorder(
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+                ),
+                builder: (ctx) {
+                  return SafeArea(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const SizedBox(height: 8),
+                        const Text('Language', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                        ListTile(
+                          leading: const Icon(Icons.language),
+                          title: const Text('日本語'),
+                          onTap: () => Navigator.pop(ctx, const Locale('ja')),
+                        ),
+                        ListTile(
+                          leading: const Icon(Icons.language),
+                          title: const Text('English'),
+                          onTap: () => Navigator.pop(ctx, const Locale('en')),
+                        ),
+                        ListTile(
+                          leading: const Icon(Icons.language),
+                          title: const Text('简体中文'),
+                          onTap: () => Navigator.pop(ctx, const Locale('zh')),
+                        ),
+                        ListTile(
+                          leading: const Icon(Icons.language),
+                          title: const Text('한국어'),
+                          onTap: () => Navigator.pop(ctx, const Locale('ko')),
+                        ),
+                        const SizedBox(height: 8),
+                        TextButton(
+                          onPressed: () => Navigator.pop(ctx, null),
+                          child: const Text('System default'),
+                        ),
+                        const SizedBox(height: 8),
+                      ],
+                    ),
+                  );
+                },
+              );
+              if (selected != null || selected == null) {
+                AppLocale.set(selected);
+                setState(() {});
+              }
+            },
+            icon: const Icon(Icons.settings, color: Colors.white),
+            label: Text(
+              AppLocalizations.of(context)?.language ?? 'language',
+              style: const TextStyle(color: Colors.white),
+            ),
+          ),
+        ],
       ),
       body: Container(
         decoration: const BoxDecoration(
@@ -142,15 +245,15 @@ class _InputPageState extends State<InputPage> {
                   children: [
                     const Icon(Icons.settings, size: 40, color: Colors.lightBlue),
                     const SizedBox(height: 10),
-                    const Text(
-                      'あなたの目標を設定しましょう',
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.lightBlue),
+                    Text(
+                      AppLocalizations.of(context)?.setupTitle ?? 'あなたの目標を設定しましょう',
+                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.lightBlue),
                     ),
                     const SizedBox(height: 5),
-                    const Text(
-                      'より正確なカロリー計算のために、以下の情報を入力してください',
+                    Text(
+                      AppLocalizations.of(context)?.setupDescription ?? 'より正確なカロリー計算のために、以下の情報を入力してください',
                       textAlign: TextAlign.center,
-                      style: TextStyle(color: Colors.grey),
+                      style: const TextStyle(color: Colors.grey),
                     ),
                   ],
                 ),
@@ -178,49 +281,49 @@ class _InputPageState extends State<InputPage> {
                       children: [
                         const Icon(Icons.person, color: Colors.lightBlue, size: 24),
                         const SizedBox(width: 10),
-                        const Text(
-                          '基本情報',
-                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.lightBlue),
+                        Text(
+                          AppLocalizations.of(context)?.basicInfoTitle ?? '基本情報',
+                          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.lightBlue),
                         ),
                       ],
                     ),
                     const SizedBox(height: 16),
                     TextField(
                       controller: _ageController,
-                      decoration: const InputDecoration(
-                        labelText: '年齢',
-                        border: OutlineInputBorder(),
-                        prefixIcon: Icon(Icons.person),
+                      decoration: InputDecoration(
+                        labelText: AppLocalizations.of(context)?.ageLabel ?? '年齢',
+                        border: const OutlineInputBorder(),
+                        prefixIcon: const Icon(Icons.person),
                       ),
                       keyboardType: TextInputType.number,
                     ),
                     const SizedBox(height: 16),
                     TextField(
                       controller: _heightController,
-                      decoration: const InputDecoration(
-                        labelText: '身長 (cm)',
-                        border: OutlineInputBorder(),
-                        prefixIcon: Icon(Icons.height),
+                      decoration: InputDecoration(
+                        labelText: AppLocalizations.of(context)?.heightLabel ?? '身長 (cm)',
+                        border: const OutlineInputBorder(),
+                        prefixIcon: const Icon(Icons.height),
                       ),
                       keyboardType: TextInputType.number,
                     ),
                     const SizedBox(height: 16),
                     TextField(
                       controller: _weightController,
-                      decoration: const InputDecoration(
-                        labelText: '現在の体重 (kg)',
-                        border: OutlineInputBorder(),
-                        prefixIcon: Icon(Icons.monitor_weight),
+                      decoration: InputDecoration(
+                        labelText: AppLocalizations.of(context)?.currentWeightLabel ?? '現在の体重 (kg)',
+                        border: const OutlineInputBorder(),
+                        prefixIcon: const Icon(Icons.monitor_weight),
                       ),
                       keyboardType: TextInputType.number,
                     ),
                     const SizedBox(height: 16),
                     TextField(
                       controller: _targetWeightController,
-                      decoration: const InputDecoration(
-                        labelText: '目標体重 (kg)',
-                        border: OutlineInputBorder(),
-                        prefixIcon: Icon(Icons.flag),
+                      decoration: InputDecoration(
+                        labelText: AppLocalizations.of(context)?.targetWeightLabel ?? '目標体重 (kg)',
+                        border: const OutlineInputBorder(),
+                        prefixIcon: const Icon(Icons.flag),
                       ),
                       keyboardType: TextInputType.number,
                     ),
@@ -239,9 +342,9 @@ class _InputPageState extends State<InputPage> {
                             children: [
                               const Icon(Icons.lightbulb, color: Colors.blue, size: 16),
                               const SizedBox(width: 8),
-                              const Text(
-                                '推奨目標体重',
-                                style: TextStyle(
+                              Text(
+                                AppLocalizations.of(context)?.recommendedTargetWeightTitle ?? '推奨目標体重',
+                                style: const TextStyle(
                                   fontWeight: FontWeight.bold,
                                   color: Colors.blue,
                                   fontSize: 14,
@@ -250,31 +353,31 @@ class _InputPageState extends State<InputPage> {
                             ],
                           ),
                           const SizedBox(height: 8),
-                                                                                Text(
-                             '1か月で体重の5％（例：60㎏の場合 57㎏）推奨です',
-                             style: TextStyle(
-                               color: Colors.blue.shade700,
-                               fontSize: 13,
-                             ),
-                           ),
-                           const SizedBox(height: 4),
-                           const Text(
-                             '※過度な減量は、ホルモンバランスの乱れ、筋肉量の低下、代謝の低下を招き、リバウンドの原因となります',
-                             style: TextStyle(
-                               color: Colors.grey,
-                               fontSize: 12,
-                             ),
-                           ),
+                          Text(
+                            AppLocalizations.of(context)?.recommendedTargetWeightDesc ?? '1か月で体重の5％（例：60㎏の場合 57㎏）推奨です',
+                            style: TextStyle(
+                              color: Colors.blue.shade700,
+                              fontSize: 13,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            AppLocalizations.of(context)?.recommendedTargetWeightNote ?? '※過度な減量は、ホルモンバランスの乱れ、筋肉量の低下、代謝の低下を招き、リバウンドの原因となります',
+                            style: const TextStyle(
+                              color: Colors.grey,
+                              fontSize: 12,
+                            ),
+                          ),
                         ],
                       ),
                     ),
                     const SizedBox(height: 16),
                     TextField(
                       controller: _daysController,
-                      decoration: const InputDecoration(
-                        labelText: '目標達成日数',
-                        border: OutlineInputBorder(),
-                        prefixIcon: Icon(Icons.calendar_today),
+                      decoration: InputDecoration(
+                        labelText: AppLocalizations.of(context)?.goalDaysLabel ?? '目標達成日数',
+                        border: const OutlineInputBorder(),
+                        prefixIcon: const Icon(Icons.calendar_today),
                       ),
                       keyboardType: TextInputType.number,
                     ),
@@ -304,41 +407,41 @@ class _InputPageState extends State<InputPage> {
                       children: [
                         const Icon(Icons.settings, color: Colors.lightBlue, size: 24),
                         const SizedBox(width: 10),
-                        const Text(
-                          '詳細設定',
-                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.lightBlue),
+                        Text(
+                          AppLocalizations.of(context)?.detailedSettingsTitle ?? '詳細設定',
+                          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.lightBlue),
                         ),
                       ],
                     ),
                     const SizedBox(height: 16),
                     DropdownButtonFormField<String>(
                       value: _gender,
-                      decoration: const InputDecoration(
-                        labelText: '性別',
-                        border: OutlineInputBorder(),
-                        prefixIcon: Icon(Icons.people),
+                      decoration: InputDecoration(
+                        labelText: AppLocalizations.of(context)?.genderLabel ?? '性別',
+                        border: const OutlineInputBorder(),
+                        prefixIcon: const Icon(Icons.people),
                       ),
                       onChanged: (value) => setState(() => _gender = value!),
-                      items: const [
-                        DropdownMenuItem(value: '女性', child: Text('女性')),
-                        DropdownMenuItem(value: '男性', child: Text('男性')),
+                      items: [
+                        DropdownMenuItem(value: '女性', child: Text(AppLocalizations.of(context)?.genderFemale ?? '女性')),
+                        DropdownMenuItem(value: '男性', child: Text(AppLocalizations.of(context)?.genderMale ?? '男性')),
                       ],
                     ),
                     const SizedBox(height: 16),
-                                         DropdownButtonFormField<double>(
-                       value: _activityFactor,
-                       decoration: const InputDecoration(
-                         labelText: '普段の活動レベル',
-                         border: OutlineInputBorder(),
-                         prefixIcon: Icon(Icons.fitness_center),
-                       ),
-                       onChanged: (value) => setState(() => _activityFactor = value!),
-                       items: const [
-                         DropdownMenuItem(value: 1.2, child: Text('あまり運動しない')),
-                         DropdownMenuItem(value: 1.55, child: Text('適度な運動をしている')),
-                         DropdownMenuItem(value: 1.9, child: Text('高強度な運動をしている')),
-                       ],
-                     ),
+                    DropdownButtonFormField<double>(
+                      value: _activityFactor,
+                      decoration: InputDecoration(
+                        labelText: AppLocalizations.of(context)?.activityLevelLabel ?? '普段の活動レベル',
+                        border: const OutlineInputBorder(),
+                        prefixIcon: const Icon(Icons.fitness_center),
+                      ),
+                      onChanged: (value) => setState(() => _activityFactor = value!),
+                      items: [
+                        DropdownMenuItem(value: 1.2, child: Text(AppLocalizations.of(context)?.activityLevelLow ?? 'あまり運動しない')),
+                        DropdownMenuItem(value: 1.55, child: Text(AppLocalizations.of(context)?.activityLevelMedium ?? '適度な運動をしている')),
+                        DropdownMenuItem(value: 1.9, child: Text(AppLocalizations.of(context)?.activityLevelHigh ?? '高強度な運動をしている')),
+                      ],
+                    ),
                   ],
                 ),
               ),
@@ -347,7 +450,7 @@ class _InputPageState extends State<InputPage> {
               // 計算ボタン
               Container(
                 decoration: BoxDecoration(
-                  gradient: LinearGradient(
+                  gradient: const LinearGradient(
                     colors: [Colors.lightBlue, Colors.blue],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
@@ -372,21 +475,21 @@ class _InputPageState extends State<InputPage> {
                     ),
                   ),
                   child: _isCalculating
-                      ? const Row(
+                      ? Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            SizedBox(
+                            const SizedBox(
                               width: 20,
                               height: 20,
                               child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
                             ),
-                            SizedBox(width: 10),
-                            Text('計算中...', style: TextStyle(color: Colors.white, fontSize: 16)),
+                            const SizedBox(width: 10),
+                            Text(AppLocalizations.of(context)?.calculating ?? '計算中...', style: const TextStyle(color: Colors.white, fontSize: 16)),
                           ],
                         )
-                      : const Text(
-                          'カロリーを計算',
-                          style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600),
+                      : Text(
+                          AppLocalizations.of(context)?.calcCaloriesButton ?? 'カロリーを計算',
+                          style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600),
                         ),
                 ),
               ),
@@ -411,7 +514,7 @@ class _InputPageState extends State<InputPage> {
                       const Icon(Icons.check_circle, color: Colors.green, size: 40),
                       const SizedBox(height: 10),
                       Text(
-                        '1日の摂取カロリー目安',
+                        AppLocalizations.of(context)?.recommendedDailyCaloriesTitle ?? '1日の摂取カロリー目安',
                         style: TextStyle(fontSize: 16, color: Colors.green.shade700),
                       ),
                       const SizedBox(height: 5),
@@ -453,13 +556,36 @@ class _InputPageState extends State<InputPage> {
                         borderRadius: BorderRadius.circular(15),
                       ),
                     ),
-                                         child: const Text(
-                       '設定を変更',
-                       style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600),
-                     ),
+                    child: Text(
+                      AppLocalizations.of(context)?.settingsChangedButton ?? '設定を変更',
+                      style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600),
+                    ),
                   ),
                 ),
               ],
+              const SizedBox(height: 20),
+              Center(
+                child: TextButton.icon(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const PrivacyPolicyPage(),
+                      ),
+                    );
+                  },
+                  icon: const Icon(Icons.privacy_tip_outlined),
+                  label: Text(
+                    AppLocalizations.of(context)?.privacyPolicyLink ?? 'プライバシーポリシー',
+                    style: const TextStyle(
+                      decoration: TextDecoration.underline,
+                    ),
+                  ),
+                  style: TextButton.styleFrom(
+                    foregroundColor: Colors.blue,
+                  ),
+                ),
+              ),
             ],
           ),
         ),

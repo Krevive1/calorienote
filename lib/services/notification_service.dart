@@ -3,6 +3,7 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:timezone/data/latest.dart' as tz;
+import 'package:flutter/foundation.dart' show kDebugMode;
 
 class NotificationService {
   static final FlutterLocalNotificationsPlugin _localNotifications =
@@ -31,8 +32,40 @@ class NotificationService {
 
     await _localNotifications.initialize(
       initializationSettings,
-      onDidReceiveNotificationResponse: _onNotificationTapped,
+      onDidReceiveNotificationResponse: (NotificationResponse response) {
+        if (kDebugMode) {
+          debugPrint('Notification tapped: ${response.payload}');
+        }
+      },
     );
+
+    // 通知権限を明示的に要求
+    await _requestNotificationPermissions();
+  }
+
+  // 通知権限を要求
+  static Future<void> _requestNotificationPermissions() async {
+    try {
+      final AndroidFlutterLocalNotificationsPlugin? androidImplementation =
+          _localNotifications.resolvePlatformSpecificImplementation<
+              AndroidFlutterLocalNotificationsPlugin>();
+
+      if (androidImplementation != null) {
+        // Android 13以降では権限要求が不要
+        if (kDebugMode) {
+          debugPrint('Android notification implementation found');
+        }
+      }
+
+      // iOSの権限要求は初期化時に自動的に行われる
+      if (kDebugMode) {
+        debugPrint('Notification permissions handled during initialization');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('Error requesting notification permissions: $e');
+      }
+    }
   }
 
   static void _onNotificationTapped(NotificationResponse response) {

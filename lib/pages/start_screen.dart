@@ -12,6 +12,7 @@ class _StartScreenState extends State<StartScreen>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _animation;
+  Timer? _timer; // Timerを追加
 
   @override
   void initState() {
@@ -25,13 +26,16 @@ class _StartScreenState extends State<StartScreen>
     _animation = Tween<double>(begin: 0, end: 1).animate(_controller);
     _controller.forward();
 
-    Timer(const Duration(seconds: 3), () {
-      Navigator.of(context).pushReplacementNamed('/home');
+    _timer = Timer(const Duration(seconds: 3), () {
+      if (mounted) {
+        Navigator.of(context).pushReplacementNamed('/home');
+      }
     });
   }
 
   @override
   void dispose() {
+    _timer?.cancel(); // Timerをキャンセル
     _controller.dispose();
     super.dispose();
   }

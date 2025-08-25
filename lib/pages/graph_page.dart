@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'data_storage.dart';
+import 'package:calorie_note/l10n/app_localizations.dart';
 
 class GraphPage extends StatefulWidget {
   const GraphPage({super.key});
@@ -21,12 +22,30 @@ class _GraphPageState extends State<GraphPage> {
     _loadGraphData();
   }
 
-  void _loadGraphData() async {
-    final data = await DataStorage.loadGraphData();
-    setState(() {
-      _allData = data;
-      _isLoading = false;
-    });
+  @override
+  void dispose() {
+    super.dispose();
+  }
+
+  Future<void> _loadGraphData() async {
+    try {
+      final data = await DataStorage.loadGraphData();
+      if (mounted) {
+        setState(() {
+          _allData = data;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('データの読み込みに失敗しました: $e')),
+        );
+      }
+    }
   }
 
   List<String> _getDisplayedDates() {
@@ -62,11 +81,9 @@ class _GraphPageState extends State<GraphPage> {
   }
 
   String _formatDateLabel(String isoDate) {
-    // isoDate: YYYY-MM-DD → MM/DD 表示
     if (isoDate.length >= 10) {
       final String mm = isoDate.substring(5, 7);
       final String dd = isoDate.substring(8, 10);
-      // 先頭ゼロを取り除く
       final String m = mm.startsWith('0') ? mm.substring(1) : mm;
       final String d = dd.startsWith('0') ? dd.substring(1) : dd;
       return '$m/$d';
@@ -74,47 +91,32 @@ class _GraphPageState extends State<GraphPage> {
     return isoDate;
   }
 
-  // 目標体重を取得するメソッド
   Future<double?> _getTargetWeight() async {
     try {
       final prefs = await SharedPreferences.getInstance();
       final targetWeight = prefs.getDouble('targetWeight');
-      print('取得した目標体重: $targetWeight'); // デバッグ用ログ
-      
-      // すべての保存された値を確認
-      final allKeys = prefs.getKeys();
-      print('保存されているすべてのキー: $allKeys');
-      
       return targetWeight;
     } catch (e) {
-      print('目標体重取得エラー: $e'); // デバッグ用ログ
       return null;
     }
   }
 
-  // 体重グラフのY軸最小値を計算するメソッド
   Future<double> _getWeightMinY() async {
     final targetWeight = await _getTargetWeight();
-    print('_getWeightMinY: targetWeight = $targetWeight'); // デバッグ用ログ
-    
     if (targetWeight != null) {
-      // 目標体重の-20kgを最小値として設定
-      final minY = targetWeight - 20.0;
-      print('計算されたminY: $minY (目標体重: $targetWeight - 20kg)'); // デバッグ用ログ
-      return minY;
+      return targetWeight - 20.0;
     }
-    print('目標体重が設定されていないため、minYを0に設定'); // デバッグ用ログ
-    // 目標体重が設定されていない場合は0を返す
     return 0.0;
   }
 
   @override
   Widget build(BuildContext context) {
+    final t = AppLocalizations.of(context);
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          '体重＆カロリーグラフ',
-          style: TextStyle(
+        title: Text(
+          t?.graphTitle ?? '体重＆カロリーグラフ',
+          style: const TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.bold,
             color: Colors.white,
@@ -147,14 +149,14 @@ class _GraphPageState extends State<GraphPage> {
                     ],
                   ),
                   padding: const EdgeInsets.all(30),
-                  child: const Column(
+                  child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      CircularProgressIndicator(color: Colors.lightBlue),
-                      SizedBox(height: 20),
+                      const CircularProgressIndicator(color: Colors.lightBlue),
+                      const SizedBox(height: 20),
                       Text(
-                        'データを読み込み中...',
-                        style: TextStyle(
+                        t?.loadingData ?? 'データを読み込み中...',
+                        style: const TextStyle(
                           fontSize: 16,
                           color: Colors.lightBlue,
                         ),
@@ -178,27 +180,27 @@ class _GraphPageState extends State<GraphPage> {
                         ],
                       ),
                       padding: const EdgeInsets.all(30),
-                      child: const Column(
+                      child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(
+                          const Icon(
                             Icons.show_chart,
                             size: 60,
                             color: Colors.lightBlue,
                           ),
-                          SizedBox(height: 20),
+                          const SizedBox(height: 20),
                           Text(
-                            'まだデータがありません',
-                            style: TextStyle(
+                            t?.noGraphData ?? 'まだデータがありません',
+                            style: const TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
                               color: Colors.lightBlue,
                             ),
                           ),
-                          SizedBox(height: 10),
+                          const SizedBox(height: 10),
                           Text(
-                            '食事記録を追加してグラフを表示しましょう！',
-                            style: TextStyle(
+                            t?.addMealsForGraph ?? '食事記録を追加してグラフを表示しましょう！',
+                            style: const TextStyle(
                               color: Colors.grey,
                             ),
                           ),
@@ -210,16 +212,15 @@ class _GraphPageState extends State<GraphPage> {
                     padding: const EdgeInsets.all(20),
                     child: Column(
                       children: [
-                        // 表示期間セレクタ
                         Align(
                           alignment: Alignment.centerRight,
                           child: DropdownButton<int>(
                             value: _spanDays,
-                            items: const [
-                              DropdownMenuItem(value: 7, child: Text('7日')),
-                              DropdownMenuItem(value: 14, child: Text('14日')),
-                              DropdownMenuItem(value: 31, child: Text('31日')),
-                              DropdownMenuItem(value: 0, child: Text('全期間')),
+                            items: [
+                              DropdownMenuItem(value: 7, child: Text(t?.span7Days ?? '7日')),
+                              DropdownMenuItem(value: 14, child: Text(t?.span14Days ?? '14日')),
+                              DropdownMenuItem(value: 31, child: Text(t?.span31Days ?? '31日')),
+                              DropdownMenuItem(value: 0, child: Text(t?.spanAll ?? '全期間')),
                             ],
                             onChanged: (value) {
                               if (value == null) return;
@@ -230,20 +231,15 @@ class _GraphPageState extends State<GraphPage> {
                           ),
                         ),
                         const SizedBox(height: 10),
-
                         Builder(builder: (context) {
                           final dates = _getDisplayedDates();
                           final weightSpots = _getWeightSpots(dates);
                           final calorieSpots = _getCalorieSpots(dates);
                           final int n = dates.length;
-
-                          // 目盛りを約6個に間引く
                           final int maxTicks = 6;
                           final int interval = n <= 1 ? 1 : (n / maxTicks).ceil();
-
                           return Column(
                             children: [
-                              // 体重グラフ
                               Container(
                                 decoration: BoxDecoration(
                                   color: Colors.white.withValues(alpha: 0.9),
@@ -267,9 +263,9 @@ class _GraphPageState extends State<GraphPage> {
                                           size: 24,
                                         ),
                                         const SizedBox(width: 10),
-                                        const Text(
-                                          '体重の推移',
-                                          style: TextStyle(
+                                        Text(
+                                          t?.weightTrend ?? '体重の推移',
+                                          style: const TextStyle(
                                             fontSize: 18,
                                             fontWeight: FontWeight.bold,
                                             color: Colors.lightBlue,
@@ -278,41 +274,26 @@ class _GraphPageState extends State<GraphPage> {
                                       ],
                                     ),
                                     const SizedBox(height: 20),
-                                                                         FutureBuilder<double>(
-                                       future: _getWeightMinY(),
-                                       builder: (context, snapshot) {
-                                         final minY = snapshot.data ?? 0.0;
-                                         print('FutureBuilder: minY = $minY'); // デバッグ用ログ
-                                         return SizedBox(
+                                    FutureBuilder<double>(
+                                      future: _getWeightMinY(),
+                                      builder: (context, snapshot) {
+                                        final minY = snapshot.data ?? 0.0;
+                                        return SizedBox(
                                           height: 200,
                                           child: LineChart(
                                             LineChartData(
                                               gridData: FlGridData(
                                                 show: true,
                                                 drawVerticalLine: true,
-                                                horizontalInterval: 5, // 体重グラフの水平グリッド間隔を5kgに
+                                                horizontalInterval: 5, // 2から5に戻す
                                                 verticalInterval: 1,
-                                                getDrawingHorizontalLine: (value) {
-                                                  return FlLine(
-                                                    color: Colors.grey.shade300,
-                                                    strokeWidth: 1,
-                                                  );
-                                                },
-                                                getDrawingVerticalLine: (value) {
-                                                  return FlLine(
-                                                    color: Colors.grey.shade300,
-                                                    strokeWidth: 1,
-                                                  );
-                                                },
+                                                getDrawingHorizontalLine: (value) => FlLine(color: Colors.grey.shade300, strokeWidth: 1),
+                                                getDrawingVerticalLine: (value) => FlLine(color: Colors.grey.shade300, strokeWidth: 1),
                                               ),
                                               titlesData: FlTitlesData(
                                                 show: true,
-                                                rightTitles: AxisTitles(
-                                                  sideTitles: SideTitles(showTitles: false),
-                                                ),
-                                                topTitles: AxisTitles(
-                                                  sideTitles: SideTitles(showTitles: false),
-                                                ),
+                                                rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                                                topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
                                                 bottomTitles: AxisTitles(
                                                   sideTitles: SideTitles(
                                                     showTitles: true,
@@ -320,23 +301,14 @@ class _GraphPageState extends State<GraphPage> {
                                                     interval: interval.toDouble(),
                                                     getTitlesWidget: (double value, TitleMeta meta) {
                                                       final int idx = value.toInt();
-                                                      if (idx < 0 || idx >= n) {
-                                                        return const SizedBox.shrink();
-                                                      }
-                                                      // intervalに該当しないindexは非表示
-                                                      if (idx % interval != 0 && idx != n - 1) {
-                                                        return const SizedBox.shrink();
-                                                      }
+                                                      if (idx < 0 || idx >= n) return const SizedBox.shrink();
+                                                      if (idx % interval != 0 && idx != n - 1) return const SizedBox.shrink();
                                                       final label = _formatDateLabel(dates[idx]);
                                                       return SideTitleWidget(
                                                         axisSide: meta.axisSide,
                                                         child: Text(
                                                           label,
-                                                          style: const TextStyle(
-                                                            color: Colors.grey,
-                                                            fontWeight: FontWeight.bold,
-                                                            fontSize: 11,
-                                                          ),
+                                                          style: const TextStyle(color: Colors.grey, fontWeight: FontWeight.bold, fontSize: 11),
                                                         ),
                                                       );
                                                     },
@@ -345,48 +317,30 @@ class _GraphPageState extends State<GraphPage> {
                                                 leftTitles: AxisTitles(
                                                   sideTitles: SideTitles(
                                                     showTitles: true,
-                                                    interval: 5, // 5kg間隔に変更
-                                                    getTitlesWidget: (double value, TitleMeta meta) {
-                                                      return Text(
-                                                        '${value.toInt()}kg',
-                                                        style: const TextStyle(
-                                                          color: Colors.black87, // より見やすい色に変更
-                                                          fontWeight: FontWeight.bold,
-                                                          fontSize: 14, // フォントサイズを大きく
-                                                        ),
-                                                      );
-                                                    },
-                                                    reservedSize: 50, // 予約サイズを大きく
+                                                    interval: 5, // 2から5に戻す
+                                                    getTitlesWidget: (double value, TitleMeta meta) => Text(
+                                                      '${value.toInt()}${t?.unitKg ?? 'kg'}',
+                                                      style: const TextStyle(color: Colors.black87, fontWeight: FontWeight.bold, fontSize: 14),
+                                                    ),
+                                                    reservedSize: 50,
                                                   ),
                                                 ),
                                               ),
-                                              borderData: FlBorderData(
-                                                show: true,
-                                                border: Border.all(color: Colors.grey.shade300),
-                                              ),
+                                              borderData: FlBorderData(show: true, border: Border.all(color: Colors.grey.shade300)),
                                               minX: 0,
                                               maxX: weightSpots.isEmpty ? 0 : weightSpots.length.toDouble() - 1,
-                                              minY: minY, // 動的に計算された最小値を使用
-                                              maxY: weightSpots.isEmpty ? 100 : (weightSpots.map((spot) => spot.y).reduce((a, b) => a > b ? a : b) + 5), // 最大値に余裕を持たせる
+                                              minY: weightSpots.isEmpty ? 0 : (weightSpots.map((spot) => spot.y).reduce((a, b) => a < b ? a : b) - 2).clamp(0.0, double.infinity),
+                                              maxY: weightSpots.isEmpty ? 100 : (weightSpots.map((spot) => spot.y).reduce((a, b) => a > b ? a : b) + 2),
                                               lineBarsData: [
                                                 LineChartBarData(
                                                   spots: weightSpots,
                                                   isCurved: true,
-                                                  gradient: LinearGradient(
-                                                    colors: [Colors.blue, Colors.lightBlue],
-                                                  ),
-                                                  barWidth: 3,
+                                                  gradient: const LinearGradient(colors: [Colors.blue, Colors.lightBlue]),
+                                                  barWidth: 4, // 3から4に変更
                                                   isStrokeCapRound: true,
                                                   dotData: FlDotData(
                                                     show: true,
-                                                    getDotPainter: (spot, percent, barData, index) {
-                                                      return FlDotCirclePainter(
-                                                        radius: 4,
-                                                        color: Colors.blue,
-                                                        strokeWidth: 2,
-                                                        strokeColor: Colors.white,
-                                                      );
-                                                    },
+                                                    getDotPainter: (spot, percent, barData, index) => FlDotCirclePainter(radius: 6, color: Colors.blue, strokeWidth: 3, strokeColor: Colors.white), // サイズを大きく
                                                   ),
                                                   belowBarData: BarAreaData(
                                                     show: true,
@@ -410,8 +364,6 @@ class _GraphPageState extends State<GraphPage> {
                                 ),
                               ),
                               const SizedBox(height: 20),
-
-                              // カロリーグラフ
                               Container(
                                 decoration: BoxDecoration(
                                   color: Colors.white.withValues(alpha: 0.9),
@@ -429,19 +381,11 @@ class _GraphPageState extends State<GraphPage> {
                                   children: [
                                     Row(
                                       children: [
-                                        const Icon(
-                                          Icons.local_fire_department,
-                                          color: Colors.orange,
-                                          size: 24,
-                                        ),
+                                        const Icon(Icons.local_fire_department, color: Colors.orange, size: 24),
                                         const SizedBox(width: 10),
-                                        const Text(
-                                          'カロリー摂取の推移',
-                                          style: TextStyle(
-                                            fontSize: 18,
-                                            fontWeight: FontWeight.bold,
-                                            color: Colors.lightBlue,
-                                          ),
+                                        Text(
+                                          t?.calorieTrend ?? 'カロリー摂取の推移',
+                                          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.lightBlue),
                                         ),
                                       ],
                                     ),
@@ -453,29 +397,15 @@ class _GraphPageState extends State<GraphPage> {
                                           gridData: FlGridData(
                                             show: true,
                                             drawVerticalLine: true,
-                                            horizontalInterval: 500, // カロリーグラフの水平グリッド間隔を500kcalに
+                                            horizontalInterval: 400, // 500から400に変更
                                             verticalInterval: 1,
-                                            getDrawingHorizontalLine: (value) {
-                                              return FlLine(
-                                                color: Colors.grey.shade300,
-                                                strokeWidth: 1,
-                                              );
-                                            },
-                                            getDrawingVerticalLine: (value) {
-                                              return FlLine(
-                                                color: Colors.grey.shade300,
-                                                strokeWidth: 1,
-                                              );
-                                            },
+                                            getDrawingHorizontalLine: (value) => FlLine(color: Colors.grey.shade300, strokeWidth: 1),
+                                            getDrawingVerticalLine: (value) => FlLine(color: Colors.grey.shade300, strokeWidth: 1),
                                           ),
                                           titlesData: FlTitlesData(
                                             show: true,
-                                            rightTitles: AxisTitles(
-                                              sideTitles: SideTitles(showTitles: false),
-                                            ),
-                                            topTitles: AxisTitles(
-                                              sideTitles: SideTitles(showTitles: false),
-                                            ),
+                                            rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                                            topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
                                             bottomTitles: AxisTitles(
                                               sideTitles: SideTitles(
                                                 showTitles: true,
@@ -483,23 +413,12 @@ class _GraphPageState extends State<GraphPage> {
                                                 interval: interval.toDouble(),
                                                 getTitlesWidget: (double value, TitleMeta meta) {
                                                   final int idx = value.toInt();
-                                                  if (idx < 0 || idx >= n) {
-                                                    return const SizedBox.shrink();
-                                                  }
-                                                  if (idx % interval != 0 && idx != n - 1) {
-                                                    return const SizedBox.shrink();
-                                                  }
+                                                  if (idx < 0 || idx >= n) return const SizedBox.shrink();
+                                                  if (idx % interval != 0 && idx != n - 1) return const SizedBox.shrink();
                                                   final label = _formatDateLabel(dates[idx]);
                                                   return SideTitleWidget(
                                                     axisSide: meta.axisSide,
-                                                    child: Text(
-                                                      label,
-                                                      style: const TextStyle(
-                                                        color: Colors.grey,
-                                                        fontWeight: FontWeight.bold,
-                                                        fontSize: 11,
-                                                      ),
-                                                    ),
+                                                    child: Text(label, style: const TextStyle(color: Colors.grey, fontWeight: FontWeight.bold, fontSize: 11)),
                                                   );
                                                 },
                                               ),
@@ -507,47 +426,31 @@ class _GraphPageState extends State<GraphPage> {
                                             leftTitles: AxisTitles(
                                               sideTitles: SideTitles(
                                                 showTitles: true,
-                                                interval: 500, // 500kcal間隔に変更
-                                                getTitlesWidget: (double value, TitleMeta meta) {
-                                                  return Text(
-                                                    '${value.toInt()}kcal',
-                                                    style: const TextStyle(
-                                                      color: Colors.black87, // より見やすい色に変更
-                                                      fontWeight: FontWeight.bold,
-                                                      fontSize: 14, // フォントサイズを大きく
-                                                    ),
-                                                  );
-                                                },
-                                                reservedSize: 60, // 予約サイズを大きく（kcalは文字数が多いため）
+                                                interval: 400, // 500から400に変更
+                                                getTitlesWidget: (double value, TitleMeta meta) => Text(
+                                                  '${value.toInt()}${t?.unitKcal ?? 'kcal'}',
+                                                  style: const TextStyle(color: Colors.black87, fontWeight: FontWeight.bold, fontSize: 14),
+                                                ),
+                                                reservedSize: 60,
                                               ),
                                             ),
                                           ),
-                                          borderData: FlBorderData(
-                                            show: true,
-                                            border: Border.all(color: Colors.grey.shade300),
-                                          ),
+                                          borderData: FlBorderData(show: true, border: Border.all(color: Colors.grey.shade300)),
                                           minX: 0,
                                           maxX: calorieSpots.isEmpty ? 0 : calorieSpots.length.toDouble() - 1,
                                           minY: 0,
+                                          maxY: calorieSpots.isEmpty ? 2000 : (calorieSpots.map((spot) => spot.y).reduce((a, b) => a > b ? a : b) > 2000 ? 
+                                                 (calorieSpots.map((spot) => spot.y).reduce((a, b) => a > b ? a : b) + 200).roundToDouble() : 2000),
                                           lineBarsData: [
                                             LineChartBarData(
                                               spots: calorieSpots,
                                               isCurved: true,
-                                              gradient: LinearGradient(
-                                                colors: [Colors.orange, Colors.red],
-                                              ),
+                                              gradient: const LinearGradient(colors: [Colors.orange, Colors.red]),
                                               barWidth: 3,
                                               isStrokeCapRound: true,
                                               dotData: FlDotData(
                                                 show: true,
-                                                getDotPainter: (spot, percent, barData, index) {
-                                                  return FlDotCirclePainter(
-                                                    radius: 4,
-                                                    color: Colors.orange,
-                                                    strokeWidth: 2,
-                                                    strokeColor: Colors.white,
-                                                  );
-                                                },
+                                                getDotPainter: (spot, percent, barData, index) => FlDotCirclePainter(radius: 4, color: Colors.orange, strokeWidth: 2, strokeColor: Colors.white),
                                               ),
                                               belowBarData: BarAreaData(
                                                 show: true,

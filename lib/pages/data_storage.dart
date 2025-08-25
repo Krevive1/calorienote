@@ -3,39 +3,115 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class DataStorage {
   static Future<void> saveMeal(String date, String meal, int calories) async {
+    try {
+      print('DataStorage.saveMeal: $date に $meal ($calories kcal) を保存');
+      final prefs = await SharedPreferences.getInstance();
+      final key = 'meals_$date';
+      final data = prefs.getString(key);
+      final List<Map<String, dynamic>> meals = data != null
+          ? List<Map<String, dynamic>>.from(jsonDecode(data))
+          : [];
+      meals.add({'food': meal, 'calories': calories});
+      await prefs.setString(key, jsonEncode(meals));
+      print('DataStorage.saveMeal: 保存完了、現在の食事数: ${meals.length}');
+    } catch (e) {
+      print('Error saving meal for $date: $e');
+      rethrow;
+    }
+  }
+
+  static Future<void> deleteMeal(String date, int index) async {
     final prefs = await SharedPreferences.getInstance();
     final key = 'meals_$date';
     final data = prefs.getString(key);
-    final List<Map<String, dynamic>> meals = data != null
-        ? List<Map<String, dynamic>>.from(jsonDecode(data))
-        : [];
-    meals.add({'meal': meal, 'calories': calories});
-    prefs.setString(key, jsonEncode(meals));
+    if (data == null) return;
+    
+    try {
+      final List<Map<String, dynamic>> meals = List<Map<String, dynamic>>.from(jsonDecode(data));
+      if (index >= 0 && index < meals.length) {
+        meals.removeAt(index);
+        await prefs.setString(key, jsonEncode(meals));
+      }
+    } catch (e) {
+      print('Error deleting meal for $date at index $index: $e');
+    }
+  }
+
+  static Future<void> updateMeal(String date, int index, String meal, int calories) async {
+    final prefs = await SharedPreferences.getInstance();
+    final key = 'meals_$date';
+    final data = prefs.getString(key);
+    if (data == null) return;
+    
+    try {
+      final List<Map<String, dynamic>> meals = List<Map<String, dynamic>>.from(jsonDecode(data));
+      if (index >= 0 && index < meals.length) {
+        meals[index] = {'food': meal, 'calories': calories};
+        await prefs.setString(key, jsonEncode(meals));
+      }
+    } catch (e) {
+      print('Error updating meal for $date at index $index: $e');
+    }
   }
 
   static Future<List<Map<String, dynamic>>> loadMeals(String date) async {
     final prefs = await SharedPreferences.getInstance();
     final key = 'meals_$date';
     final data = prefs.getString(key);
-    return data != null
-        ? List<Map<String, dynamic>>.from(jsonDecode(data))
-        : [];
+    print('DataStorage.loadMeals: $date のキー: $key');
+    print('DataStorage.loadMeals: $date のデータ: $data');
+    
+    if (data == null) {
+      print('DataStorage.loadMeals: $date のデータがnull');
+      return [];
+    }
+    
+    try {
+      final decoded = List<Map<String, dynamic>>.from(jsonDecode(data));
+      print('DataStorage.loadMeals: $date をデコード成功、食事数: ${decoded.length}');
+      return decoded;
+    } catch (e) {
+      // 破損したデータの場合は空のリストを返す
+      print('Error loading meals for $date: $e');
+      return [];
+    }
   }
 
   static Future<Map<String, dynamic>> loadAllData() async {
-    // 過去記録一覧用: 日付 -> その日の保存済みデータ（旧/新形式）
-    final prefs = await SharedPreferences.getInstance();
-    final keys = prefs.getKeys().where((key) => key.startsWith('meals_')).toList();
-    final Map<String, dynamic> allData = {};
+    try {
+      print('DataStorage.loadAllData: 開始');
+      // 過去記録一覧用: 日付 -> その日の保存済みデータ（旧/新形式）
+      final prefs = await SharedPreferences.getInstance();
+      final allKeys = prefs.getKeys();
+      print('DataStorage.loadAllData: 全キー: $allKeys');
+      
+      final keys = allKeys.where((key) => key.startsWith('meals_')).toList();
+      print('DataStorage.loadAllData: meals_で始まるキー: $keys');
+      
+      final Map<String, dynamic> allData = {};
 
-    for (var key in keys) {
-      final date = key.replaceFirst('meals_', '');
-      final data = prefs.getString(key);
-      if (data != null) {
-        allData[date] = jsonDecode(data);
+      for (var key in keys) {
+        final date = key.replaceFirst('meals_', '');
+        final data = prefs.getString(key);
+        print('DataStorage.loadAllData: $date のデータ: $data');
+        if (data != null) {
+          try {
+            final decoded = jsonDecode(data);
+            allData[date] = decoded;
+            print('DataStorage.loadAllData: $date をデコード成功: $decoded');
+          } catch (e) {
+            print('Error decoding data for $date: $e');
+            // 破損したデータはスキップ
+            continue;
+          }
+        }
       }
+      print('DataStorage.loadAllData: 最終結果: $allData');
+      return allData;
+    } catch (e) {
+      print('Error loading all data: $e');
+      return {};
     }
-    return allData;
   }
 
   static Future<Map<String, dynamic>> loadGraphData() async {
@@ -205,6 +281,12 @@ class DataStorage {
 
     // 目標カロリーの例（任意）
     await saveDailyTargetCalories(2000);
+  }
+
+  // 全データを削除（アプリ初期化）
+  static Future<void> clearAllData() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.clear();
   }
 
   // 開発用: 31日で70→66kgの推移 + 1週間分の食事記録（減量向け）

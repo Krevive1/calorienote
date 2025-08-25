@@ -1,140 +1,84 @@
-import 'package:flutter/material.dart';
-// import 'package:health/health.dart';
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class HealthService {
-  // static final HealthFactory _health = HealthFactory();
-
-  // 健康データの種類
-  // static const List<HealthDataType> _dataTypes = [
-  //   HealthDataType.WEIGHT,
-  //   HealthDataType.HEIGHT,
-  //   HealthDataType.STEPS,
-  //   HealthDataType.ACTIVE_ENERGY_BURNED,
-  //   HealthDataType.BASAL_ENERGY_BURNED,
-  // ];
-
-  // 初期化と権限取得
+  // 健康データ機能を一時的に無効化（リリース後に有効化予定）
+  
   static Future<bool> initialize() async {
-    try {
-      // 一時的に健康データ機能を無効化
+    if (kDebugMode) {
       debugPrint('Health service temporarily disabled');
-      return false;
-    } catch (e) {
-      debugPrint('Health service initialization error: $e');
-      return false;
     }
+    return false;
   }
 
-  // 体重データを取得
   static Future<List<dynamic>> getWeightData({
     required DateTime startDate,
     required DateTime endDate,
   }) async {
-    try {
-      // 一時的に健康データ機能を無効化
+    if (kDebugMode) {
       debugPrint('Weight data get temporarily disabled');
-      return [];
-    } catch (e) {
-      debugPrint('Error getting weight data: $e');
-      return [];
     }
+    return [];
   }
 
-  // 身長データを取得
   static Future<List<dynamic>> getHeightData({
     required DateTime startDate,
     required DateTime endDate,
   }) async {
-    try {
-      // 一時的に健康データ機能を無効化
+    if (kDebugMode) {
       debugPrint('Height data get temporarily disabled');
-      return [];
-    } catch (e) {
-      debugPrint('Error getting height data: $e');
-      return [];
     }
+    return [];
   }
 
-  // 歩数データを取得
   static Future<List<dynamic>> getStepsData({
     required DateTime startDate,
     required DateTime endDate,
   }) async {
-    try {
-      // 一時的に健康データ機能を無効化
+    if (kDebugMode) {
       debugPrint('Steps data get temporarily disabled');
-      return [];
-    } catch (e) {
-      debugPrint('Error getting steps data: $e');
-      return [];
     }
+    return [];
   }
 
-  // 消費カロリーデータを取得
   static Future<List<dynamic>> getCaloriesBurnedData({
     required DateTime startDate,
     required DateTime endDate,
   }) async {
-    try {
-      // 一時的に健康データ機能を無効化
+    if (kDebugMode) {
       debugPrint('Calories burned data get temporarily disabled');
-      return [];
-    } catch (e) {
-      debugPrint('Error getting calories burned data: $e');
-      return [];
     }
+    return [];
   }
 
-  // 体重データを健康アプリに保存
   static Future<bool> saveWeightData(double weight) async {
-    try {
-      // 一時的に健康データ機能を無効化
+    if (kDebugMode) {
       debugPrint('Weight data save temporarily disabled');
-      return false;
-    } catch (e) {
-      debugPrint('Error saving weight data: $e');
-      return false;
     }
+    return false;
   }
 
-  // 最新の体重を取得
   static Future<double?> getLatestWeight() async {
-    try {
-      // 一時的に健康データ機能を無効化
+    if (kDebugMode) {
       debugPrint('Latest weight get temporarily disabled');
-      return null;
-    } catch (e) {
-      debugPrint('Error getting latest weight: $e');
-      return null;
     }
+    return null;
   }
 
-  // 今日の歩数を取得
   static Future<int> getTodaySteps() async {
-    try {
-      // 一時的に健康データ機能を無効化
+    if (kDebugMode) {
       debugPrint('Today steps get temporarily disabled');
-      return 0;
-    } catch (e) {
-      debugPrint('Error getting today steps: $e');
-      return 0;
     }
+    return 0;
   }
 
-  // 今日の消費カロリーを取得
   static Future<double> getTodayCaloriesBurned() async {
-    try {
-      // 一時的に健康データ機能を無効化
+    if (kDebugMode) {
       debugPrint('Today calories burned get temporarily disabled');
-      return 0;
-    } catch (e) {
-      debugPrint('Error getting today calories burned: $e');
-      return 0;
     }
+    return 0;
   }
 
-  // 健康データの同期設定を保存
   static Future<void> saveSyncSettings({
     required bool syncWeight,
     required bool syncSteps,
@@ -146,7 +90,6 @@ class HealthService {
     await prefs.setBool('sync_calories', syncCalories);
   }
 
-  // 健康データの同期設定を取得
   static Future<Map<String, bool>> getSyncSettings() async {
     final prefs = await SharedPreferences.getInstance();
     return {
@@ -156,7 +99,6 @@ class HealthService {
     };
   }
 
-  // 健康データを自動同期
   static Future<void> syncHealthData() async {
     try {
       final settings = await getSyncSettings();
@@ -187,31 +129,31 @@ class HealthService {
         await prefs.setDouble('calories_burned_$today', todayCalories);
       }
       
-      debugPrint('Health data sync completed');
+      if (kDebugMode) {
+        debugPrint('Health data sync completed');
+      }
     } catch (e) {
-      debugPrint('Error syncing health data: $e');
+      if (kDebugMode) {
+        debugPrint('Error syncing health data: $e');
+      }
     }
   }
 
-  // 利用可能な健康データの種類を取得
   static Future<List<dynamic>> getAvailableDataTypes() async {
-    try {
-      // 一時的に健康データ機能を無効化
+    if (kDebugMode) {
       debugPrint('Available data types get temporarily disabled');
-      return [];
-    } catch (e) {
-      debugPrint('Error getting available data types: $e');
-      return [];
     }
+    return [];
   }
 
-  // デバイスが健康データをサポートしているかチェック
   static Future<bool> isHealthDataAvailable() async {
     try {
       final availableTypes = await getAvailableDataTypes();
       return availableTypes.isNotEmpty;
     } catch (e) {
-      debugPrint('Error checking health data availability: $e');
+      if (kDebugMode) {
+        debugPrint('Error checking health data availability: $e');
+      }
       return false;
     }
   }

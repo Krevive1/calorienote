@@ -20,14 +20,24 @@ class _BannerAdWidgetState extends State<BannerAdWidget> {
   }
 
   void _loadAd() {
-    _bannerAd = AdService.createBannerAd()
-      ..load().then((_) {
-        if (mounted) {
-          setState(() {
-            _isLoaded = true;
-          });
-        }
-      });
+    _bannerAd = AdService.createBannerAd();
+    if (_bannerAd == null) {
+      // 内部テストモードの場合、広告を表示しない
+      if (mounted) {
+        setState(() {
+          _isLoaded = true;
+        });
+      }
+      return;
+    }
+    
+    _bannerAd!.load().then((_) {
+      if (mounted) {
+        setState(() {
+          _isLoaded = true;
+        });
+      }
+    });
   }
 
   @override
@@ -45,6 +55,11 @@ class _BannerAdWidgetState extends State<BannerAdWidget> {
           child: CircularProgressIndicator(),
         ),
       );
+    }
+
+    // 内部テストモードの場合、広告を表示しない
+    if (_bannerAd == null) {
+      return const SizedBox.shrink();
     }
 
     return SizedBox(
