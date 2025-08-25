@@ -1,4 +1,4 @@
-name: iOS Build Simple
+name: iOS Build Success
 
 on:
   push:
@@ -20,6 +20,13 @@ jobs:
         
     - name: Install dependencies
       run: flutter pub get
+      
+    - name: Setup Ruby and CocoaPods
+      run: |
+        sudo gem install cocoapods
+        cd ios
+        pod setup
+        pod install --verbose
       
     - name: Build iOS Simulator
       run: flutter build ios --debug --simulator
