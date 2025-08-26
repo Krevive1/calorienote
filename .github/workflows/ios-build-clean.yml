@@ -7,7 +7,7 @@ on:
 
 jobs:
   build:
-    runs-on: macos-latest
+    runs-on: macos-14
     
     steps:
     - name: Checkout code
@@ -24,22 +24,25 @@ jobs:
     - name: Install dependencies
       run: flutter pub get
       
-    - name: Setup Ruby and CocoaPods
+    - name: Setup CocoaPods via Homebrew
       run: |
-        sudo gem install cocoapods
+        brew update
+        brew install cocoapods
         pod --version
       
     - name: Setup iOS dependencies
       run: |
         cd ios
-        pod install --repo-update --verbose
+        rm -rf Pods Podfile.lock
+        pod repo update
+        pod install --verbose
       
     - name: Clean and setup iOS
       run: |
         flutter clean
         flutter pub get
         cd ios
-        pod install --repo-update
+        pod install
       
     - name: Build iOS Simulator
       run: flutter build ios --debug --simulator
