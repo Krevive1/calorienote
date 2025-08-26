@@ -42,9 +42,15 @@ jobs:
         COCOAPODS_DISABLE_STATS: 'true'
         GIT_TERMINAL_PROMPT: 0
       run: |
+        set -euo pipefail
         cd ios
         rm -rf Pods Podfile.lock
-        pod install --repo-update --verbose
+        # Capture full output to a log and show the tail on failure
+        (pod install --repo-update --verbose 2>&1 | tee pod_install.log) || {
+          echo "\n===== pod install last 80 lines =====";
+          tail -n 80 pod_install.log || true;
+          exit 1;
+        }
       
     - name: Clean and setup iOS
       run: |
