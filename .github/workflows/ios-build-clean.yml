@@ -59,15 +59,12 @@ jobs:
         cd ios
         pod install
       
-    - name: Build iOS Simulator
+    - name: Build iOS Simulator app
       run: flutter build ios --debug --simulator
       
-    - name: Build IPA (Simulator)
-      run: flutter build ipa --debug --simulator
-      
-    - name: Upload artifacts
+    - name: Upload simulator app artifact
       uses: actions/upload-artifact@v4
       with:
-        name: ios-build
-        path: build/ios/ipa/
+        name: ios-simulator-app
+        path: build/ios/iphonesimulator/
         retention-days: 30
