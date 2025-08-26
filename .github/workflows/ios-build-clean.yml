@@ -31,16 +31,20 @@ jobs:
         bundler-cache: true
 
     - name: Install CocoaPods (gem)
+      env:
+        GIT_TERMINAL_PROMPT: 0
       run: |
-        gem install cocoapods -v 1.15.2
+        gem install cocoapods -v 1.15.2 --no-document
         pod --version
       
-    - name: Setup iOS dependencies
+    - name: Setup iOS dependencies (use CDN)
+      env:
+        COCOAPODS_DISABLE_STATS: 'true'
+        GIT_TERMINAL_PROMPT: 0
       run: |
         cd ios
         rm -rf Pods Podfile.lock
-        pod repo update
-        pod install --verbose
+        pod install --repo-update --verbose
       
     - name: Clean and setup iOS
       run: |
