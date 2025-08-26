@@ -559,7 +559,7 @@ class RecordPageState extends State<RecordPage> {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          AppLocalizations.of(context)?.food_record_title ?? '食事内容',
+          AppLocalizations.of(context)?.mealRecordTitle ?? '食事記録',
           style: const TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.bold,
@@ -780,31 +780,23 @@ class RecordPageState extends State<RecordPage> {
                      const SizedBox(height: 15),
                      
                      // 手動入力欄
-                     Row(
-                       children: [
-                         Expanded(
-                           child: TextField(
-                             controller: _exerciseController,
-                             decoration: InputDecoration(
-                               labelText: AppLocalizations.of(context)?.exerciseNameLabel ?? '運動名',
-                               border: const OutlineInputBorder(),
-                               prefixIcon: const Icon(Icons.edit),
-                             ),
-                           ),
-                         ),
-                         const SizedBox(width: 10),
-                         Expanded(
-                           child: TextField(
-                             controller: _exerciseCalorieController,
-                             decoration: InputDecoration(
-                               labelText: AppLocalizations.of(context)?.burnedCaloriesLabel ?? '消費カロリー (kcal)',
-                               border: const OutlineInputBorder(),
-                               prefixIcon: const Icon(Icons.local_fire_department),
-                             ),
-                             keyboardType: TextInputType.number,
-                           ),
-                         ),
-                       ],
+                     TextField(
+                       controller: _exerciseController,
+                       decoration: InputDecoration(
+                         labelText: AppLocalizations.of(context)?.exerciseNameLabel ?? '運動名',
+                         border: const OutlineInputBorder(),
+                         prefixIcon: const Icon(Icons.edit),
+                       ),
+                     ),
+                     const SizedBox(height: 15),
+                     TextField(
+                       controller: _exerciseCalorieController,
+                       decoration: InputDecoration(
+                         labelText: AppLocalizations.of(context)?.burnedCaloriesLabel ?? '消費カロリー (kcal)',
+                         border: const OutlineInputBorder(),
+                         prefixIcon: const Icon(Icons.local_fire_department),
+                       ),
+                       keyboardType: TextInputType.number,
                      ),
                      const SizedBox(height: 15),
                      

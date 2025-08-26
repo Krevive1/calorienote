@@ -45,5 +45,11 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>NSHealthShareUsageDescription</key>
+	<string>このアプリは健康データを読み取ってカロリー管理に使用します</string>
+	<key>NSHealthUpdateUsageDescription</key>
+	<string>このアプリは健康データを更新してカロリー管理に使用します</string>
+	<key>NSUserNotificationsUsageDescription</key>
+	<string>このアプリは通知を送信してカロリー管理をサポートします</string>
 </dict>
 </plist>

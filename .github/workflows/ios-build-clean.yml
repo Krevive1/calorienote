@@ -1,4 +1,4 @@
-name: iOS Build Success
+name: iOS Build Clean
 
 on:
   push:
@@ -12,6 +12,9 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
+      with:
+        submodules: false
+        fetch-depth: 0
       
     - name: Setup Flutter
       uses: subosito/flutter-action@v2
@@ -24,9 +27,19 @@ jobs:
     - name: Setup Ruby and CocoaPods
       run: |
         sudo gem install cocoapods
+        pod --version
+      
+    - name: Setup iOS dependencies
+      run: |
         cd ios
-        pod setup
-        pod install --verbose
+        pod install --repo-update --verbose
+      
+    - name: Clean and setup iOS
+      run: |
+        flutter clean
+        flutter pub get
+        cd ios
+        pod install --repo-update
       
     - name: Build iOS Simulator
       run: flutter build ios --debug --simulator
