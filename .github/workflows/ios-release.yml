@@ -77,7 +77,6 @@ jobs:
         cd ios
         pod install
         cd ..
-        flutter build ipa --release --export-method app-store --export-options-plist=exportOptions.plist
         
         # Create export options for App Store Connect API signing
         cat > exportOptions.plist << EOF
@@ -101,7 +100,7 @@ jobs:
         </plist>
         EOF
         
-        flutter build ipa --release --export-method app-store --export-options-plist=exportOptions.plist
+        flutter build ipa --release --export-options-plist=exportOptions.plist
       
     - name: Upload to TestFlight
       env:
