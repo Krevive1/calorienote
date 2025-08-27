@@ -64,14 +64,44 @@ jobs:
         sed -i '' "s/version: .*/version: ${{ github.event.inputs.version }}+${{ github.event.inputs.build_number }}/" pubspec.yaml
         echo "Updated version to ${{ github.event.inputs.version }}+${{ github.event.inputs.build_number }}"
       
-    - name: Build iOS IPA
+    - name: Build iOS IPA with App Store Connect API signing
+      env:
+        ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+        ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+        ASC_API_KEY_P8: ${{ secrets.ASC_API_KEY_P8 }}
+        APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        APP_IDENTIFIER: ${{ secrets.APP_IDENTIFIER }}
       run: |
         flutter clean
         flutter pub get
         cd ios
         pod install
         cd ..
-        flutter build ipa --release --export-method app-store
+        flutter build ipa --release --export-method app-store --export-options-plist=exportOptions.plist
+        
+        # Create export options for App Store Connect API signing
+        cat > exportOptions.plist << EOF
+        <?xml version="1.0" encoding="UTF-8"?>
+        <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+        <plist version="1.0">
+        <dict>
+            <key>method</key>
+            <string>app-store</string>
+            <key>teamID</key>
+            <string>${{ secrets.APPLE_TEAM_ID }}</string>
+            <key>signingStyle</key>
+            <string>automatic</string>
+            <key>stripSwiftSymbols</key>
+            <true/>
+            <key>uploadBitcode</key>
+            <false/>
+            <key>uploadSymbols</key>
+            <true/>
+        </dict>
+        </plist>
+        EOF
+        
+        flutter build ipa --release --export-method app-store --export-options-plist=exportOptions.plist
       
     - name: Upload to TestFlight
       env:
