@@ -52,6 +52,10 @@ post_install do |installer|
         'PERMISSION_HEALTH=1',
         'PERMISSION_NOTIFICATIONS=1',
       ]
+      # Disable code signing for all CocoaPods targets; Runner will be signed at archive
+      config.build_settings['CODE_SIGNING_ALLOWED'] = 'NO'
+      config.build_settings['CODE_SIGNING_REQUIRED'] = 'NO'
+      config.build_settings['EXPANDED_CODE_SIGN_IDENTITY'] = ''
     end
   end
 end
