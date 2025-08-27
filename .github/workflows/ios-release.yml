@@ -71,11 +71,6 @@ jobs:
         ASC_API_KEY_P8: ${{ secrets.ASC_API_KEY_P8 }}
         APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         APP_IDENTIFIER: ${{ secrets.APP_IDENTIFIER }}
-        DEVELOPER_APP_ID: ${{ secrets.ASC_KEY_ID }}
-        DEVELOPER_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-        CODE_SIGN_STYLE: Automatic
-        CODE_SIGN_IDENTITY: Apple Development
-        PROVISIONING_PROFILE_SPECIFIER: ""
       run: |
         flutter clean
         flutter pub get
@@ -83,7 +78,7 @@ jobs:
         pod install
         cd ..
         
-        # Create export options for App Store Connect API signing
+        # Create export options for App Store Connect API signing (distribution)
         cat > exportOptions.plist << EOF
         <?xml version="1.0" encoding="UTF-8"?>
         <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -107,27 +102,25 @@ jobs:
         </plist>
         EOF
         
-        # Configure automatic signing for all targets
+        # Archive (generic iOS device) with automatic signing
         cd ios
         xcrun xcodebuild -workspace Runner.xcworkspace \
           -scheme Runner \
+          -destination 'generic/platform=iOS' \
           -configuration Release \
           -archivePath build/Runner.xcarchive \
           -allowProvisioningUpdates \
-          -allowProvisioningDeviceRegistration \
-          CODE_SIGN_STYLE=Automatic \
-          CODE_SIGN_IDENTITY="Apple Development" \
           DEVELOPMENT_TEAM=${{ secrets.APPLE_TEAM_ID }} \
-          OTHER_CODE_SIGN_FLAGS="--keychain /tmp/keychain" \
+          CODE_SIGN_STYLE=Automatic \
+          CODE_SIGN_IDENTITY="Apple Distribution" \
           archive
         
-        # Export IPA using App Store Connect API signing
+        # Export IPA
         xcodebuild -exportArchive \
           -archivePath build/Runner.xcarchive \
           -exportPath build/ios/ipa \
           -exportOptionsPlist ../exportOptions.plist \
-          -allowProvisioningUpdates \
-          -allowProvisioningDeviceRegistration
+          -allowProvisioningUpdates
         
         cd ..
       
