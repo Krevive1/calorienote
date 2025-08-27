@@ -107,9 +107,9 @@ jobs:
         </plist>
         EOF
         
-        # Build archive using xcodebuild with automatic signing
+        # Configure automatic signing for all targets
         cd ios
-        xcodebuild -workspace Runner.xcworkspace \
+        xcrun xcodebuild -workspace Runner.xcworkspace \
           -scheme Runner \
           -configuration Release \
           -archivePath build/Runner.xcarchive \
@@ -118,6 +118,7 @@ jobs:
           CODE_SIGN_STYLE=Automatic \
           CODE_SIGN_IDENTITY="Apple Development" \
           DEVELOPMENT_TEAM=${{ secrets.APPLE_TEAM_ID }} \
+          OTHER_CODE_SIGN_FLAGS="--keychain /tmp/keychain" \
           archive
         
         # Export IPA using App Store Connect API signing
