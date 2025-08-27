@@ -81,8 +81,15 @@ jobs:
         # Write App Store Connect API key to ABSOLUTE path for xcodebuild authentication
         KEY_FILE="AuthKey_${ASC_KEY_ID}.p8"
         KEY_ABS_PATH="$(pwd)/${KEY_FILE}"
-        # Preserve newlines exactly
-        printf "%s" "$ASC_API_KEY_P8" > "$KEY_ABS_PATH"
+        # Some users store p8 with escaped \n; normalize to real newlines and strip CR
+        python3 - << PY
+import os
+key = os.environ.get('ASC_API_KEY_P8', '')
+key = key.replace('\r', '')
+key = key.replace('\\n', '\n')
+with open(os.environ['KEY_ABS_PATH'], 'w', encoding='utf-8') as f:
+    f.write(key)
+PY
         chmod 600 "$KEY_ABS_PATH"
         
         # Create export options for App Store Connect API signing (distribution)
