@@ -87,7 +87,7 @@ jobs:
         key = os.environ.get('ASC_API_KEY_P8', '')
         key = key.replace('\r', '')
         key = key.replace('\\n', '\n')
-        key_path = os.environ.get('ASC_KEY_ID', '') + '.p8'
+        key_path = 'AuthKey_' + os.environ.get('ASC_KEY_ID', '') + '.p8'
         key_abs_path = os.path.join(os.getcwd(), key_path)
         with open(key_abs_path, 'w', encoding='utf-8') as f:
             f.write(key)
