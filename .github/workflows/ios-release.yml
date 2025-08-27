@@ -78,6 +78,10 @@ jobs:
         pod install
         cd ..
         
+        # Write App Store Connect API key to file for xcodebuild authentication
+        KEY_PATH="AuthKey_${ASC_KEY_ID}.p8"
+        echo "$ASC_API_KEY_P8" > "$KEY_PATH"
+        
         # Create export options for App Store Connect API signing (distribution)
         cat > exportOptions.plist << EOF
         <?xml version="1.0" encoding="UTF-8"?>
@@ -111,6 +115,9 @@ jobs:
           -configuration Release \
           -archivePath build/Runner.xcarchive \
           -allowProvisioningUpdates \
+          -authenticationKeyPath "../$KEY_PATH" \
+          -authenticationKeyID "$ASC_KEY_ID" \
+          -authenticationKeyIssuerID "$ASC_ISSUER_ID" \
           DEVELOPMENT_TEAM=${{ secrets.APPLE_TEAM_ID }} \
           CODE_SIGN_STYLE=Automatic \
           archive 2>&1 | tee archive.log
@@ -133,12 +140,15 @@ jobs:
         
         set -e
         
-        # Export IPA
+        # Export IPA (also authenticate with API key for signing assets)
         xcodebuild -exportArchive \
           -archivePath build/Runner.xcarchive \
           -exportPath build/ios/ipa \
           -exportOptionsPlist ../exportOptions.plist \
-          -allowProvisioningUpdates
+          -allowProvisioningUpdates \
+          -authenticationKeyPath "../$KEY_PATH" \
+          -authenticationKeyID "$ASC_KEY_ID" \
+          -authenticationKeyIssuerID "$ASC_ISSUER_ID"
         
         cd ..
       
