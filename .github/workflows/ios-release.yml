@@ -102,8 +102,9 @@ jobs:
         </plist>
         EOF
         
-        # Archive (generic iOS device) with automatic signing
+        # Archive (generic iOS device) with automatic signing - capture full output
         cd ios
+        set +e
         xcrun xcodebuild -workspace Runner.xcworkspace \
           -scheme Runner \
           -destination 'generic/platform=iOS' \
@@ -113,7 +114,19 @@ jobs:
           DEVELOPMENT_TEAM=${{ secrets.APPLE_TEAM_ID }} \
           CODE_SIGN_STYLE=Automatic \
           CODE_SIGN_IDENTITY="Apple Distribution" \
-          archive
+          archive 2>&1 | tee archive.log
+        
+        ARCHIVE_EXIT_CODE=$?
+        echo "Archive exit code: $ARCHIVE_EXIT_CODE"
+        
+        if [ $ARCHIVE_EXIT_CODE -ne 0 ]; then
+          echo "=== ARCHIVE FAILED - FULL LOG ==="
+          cat archive.log
+          echo "=== END ARCHIVE LOG ==="
+          exit $ARCHIVE_EXIT_CODE
+        fi
+        
+        set -e
         
         # Export IPA
         xcodebuild -exportArchive \
