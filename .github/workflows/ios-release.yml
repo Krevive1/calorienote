@@ -113,11 +113,16 @@ jobs:
           -allowProvisioningUpdates \
           DEVELOPMENT_TEAM=${{ secrets.APPLE_TEAM_ID }} \
           CODE_SIGN_STYLE=Automatic \
-          CODE_SIGN_IDENTITY="Apple Distribution" \
           archive 2>&1 | tee archive.log
         
         ARCHIVE_EXIT_CODE=$?
         echo "Archive exit code: $ARCHIVE_EXIT_CODE"
+        
+        # Treat explicit ARCHIVE FAILED marker as failure as well
+        if grep -q "\*\* ARCHIVE FAILED \*\*" archive.log; then
+          echo "Detected ARCHIVE FAILED marker in log"
+          ARCHIVE_EXIT_CODE=1
+        fi
         
         if [ $ARCHIVE_EXIT_CODE -ne 0 ]; then
           echo "=== ARCHIVE FAILED - FULL LOG ==="
