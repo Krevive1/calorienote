@@ -100,7 +100,25 @@ jobs:
         </plist>
         EOF
         
-        flutter build ipa --release --export-options-plist=exportOptions.plist
+        # Build archive using xcodebuild directly
+        cd ios
+        xcodebuild -workspace Runner.xcworkspace \
+          -scheme Runner \
+          -configuration Release \
+          -archivePath build/Runner.xcarchive \
+          -allowProvisioningUpdates \
+          -allowProvisioningDeviceRegistration \
+          archive
+        
+        # Export IPA using App Store Connect API signing
+        xcodebuild -exportArchive \
+          -archivePath build/Runner.xcarchive \
+          -exportPath build/ios/ipa \
+          -exportOptionsPlist ../exportOptions.plist \
+          -allowProvisioningUpdates \
+          -allowProvisioningDeviceRegistration
+        
+        cd ..
       
     - name: Upload to TestFlight
       env:
@@ -123,7 +141,7 @@ jobs:
         
         # Upload to TestFlight
         fastlane pilot upload \
-          --ipa "build/ios/ipa/calorie_note.ipa" \
+          --ipa "ios/build/ios/ipa/Runner.ipa" \
           --api_key_id "${{ secrets.ASC_KEY_ID }}" \
           --api_key_issuer_id "${{ secrets.ASC_ISSUER_ID }}" \
           --api_key "${{ secrets.ASC_API_KEY_P8 }}" \
@@ -134,5 +152,5 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: ios-release-ipa
-        path: build/ios/ipa/
+        path: ios/build/ios/ipa/
         retention-days: 30
