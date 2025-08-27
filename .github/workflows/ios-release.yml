@@ -1,0 +1,109 @@
+name: iOS Release (TestFlight)
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release (e.g., 1.2.1)'
+        required: true
+        default: '1.2.1'
+      build_number:
+        description: 'Build number (e.g., 49)'
+        required: true
+        default: '49'
+      release_notes:
+        description: 'Release notes for TestFlight'
+        required: false
+        default: 'Bug fixes and improvements'
+
+jobs:
+  build-and-deploy:
+    runs-on: macos-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        submodules: false
+        fetch-depth: 0
+      
+    - name: Setup Flutter
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: '3.35.1'
+        
+    - name: Install dependencies
+      run: flutter pub get
+
+    - name: Setup Ruby
+      uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: '3.2'
+        bundler-cache: true
+
+    - name: Install CocoaPods
+      env:
+        GIT_TERMINAL_PROMPT: 0
+      run: |
+        gem install cocoapods -v 1.15.2 --no-document
+        pod --version
+      
+    - name: Setup iOS dependencies
+      env:
+        COCOAPODS_DISABLE_STATS: 'true'
+        GIT_TERMINAL_PROMPT: 0
+      run: |
+        set -euo pipefail
+        cd ios
+        rm -rf Pods Podfile.lock
+        pod install --repo-update --verbose
+      
+    - name: Update version
+      run: |
+        # Update pubspec.yaml version
+        sed -i '' "s/version: .*/version: ${{ github.event.inputs.version }}+${{ github.event.inputs.build_number }}/" pubspec.yaml
+        echo "Updated version to ${{ github.event.inputs.version }}+${{ github.event.inputs.build_number }}"
+      
+    - name: Build iOS IPA
+      run: |
+        flutter clean
+        flutter pub get
+        cd ios
+        pod install
+        cd ..
+        flutter build ipa --release --export-method app-store
+      
+    - name: Upload to TestFlight
+      env:
+        ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+        ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+        ASC_API_KEY_P8: ${{ secrets.ASC_API_KEY_P8 }}
+        APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        APP_IDENTIFIER: ${{ secrets.APP_IDENTIFIER }}
+        APP_STORE_APP_ID: ${{ secrets.APP_STORE_APP_ID }}
+      run: |
+        # Install fastlane
+        gem install fastlane
+        
+        # Create fastlane configuration
+        mkdir -p fastlane
+        cat > fastlane/Appfile << EOF
+        app_identifier("${{ secrets.APP_IDENTIFIER }}")
+        team_id("${{ secrets.APPLE_TEAM_ID }}")
+        EOF
+        
+        # Upload to TestFlight
+        fastlane pilot upload \
+          --ipa "build/ios/ipa/calorie_note.ipa" \
+          --api_key_id "${{ secrets.ASC_KEY_ID }}" \
+          --api_key_issuer_id "${{ secrets.ASC_ISSUER_ID }}" \
+          --api_key "${{ secrets.ASC_API_KEY_P8 }}" \
+          --app_id "${{ secrets.APP_STORE_APP_ID }}" \
+          --changelog "${{ github.event.inputs.release_notes }}"
+      
+    - name: Upload IPA artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: ios-release-ipa
+        path: build/ios/ipa/
+        retention-days: 30
