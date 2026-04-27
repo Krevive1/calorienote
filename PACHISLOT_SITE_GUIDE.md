@@ -164,3 +164,128 @@
 5. プライバシーポリシー
 
 この5点が揃えば、公開して改善を回し始められます。
+
+
+---
+
+## 10. マージ後にまずやること（そのまま実行できる手順）
+
+「マージした後」に迷わないよう、次の順番で進めてください。
+
+### STEP 1: 新規サイト用リポジトリを作る
+- GitHubで `slot-reset-guide` などの公開リポジトリを作成
+- ブランチは `main` を利用
+
+### STEP 2: 最低限のファイルを置いて公開
+以下の5ファイルだけ先に作成して push します。
+- `index.html`
+- `beginner.html`
+- `styles.css`
+- `disclaimer.html`
+- `privacy.html`
+
+### STEP 3: GitHub Pagesを有効化
+- リポジトリの **Settings → Pages**
+- Source: `Deploy from a branch`
+- Branch: `main` / folder: `/ (root)`
+- 数分待って公開URLで表示確認
+
+### STEP 4: 1本目の記事を今日出す
+最初の記事テーマ例:
+- 「朝一リセット狙いとは？初心者向けに5分で解説」
+
+記事の型（テンプレ）:
+1. 結論（何を狙うか）
+2. なぜ狙えるか（恩恵）
+3. 具体的な立ち回り
+4. 注意点
+5. よくある質問
+
+### STEP 5: 計測環境だけ先に入れる
+- Google Search Console 登録
+- Google Analytics 4（GA4）導入
+
+### STEP 6: 30日でやる数値目標を固定
+- 記事本数: 20本
+- 機種ページ: 10〜20本
+- 目標: まずは「検索流入の発生」を確認
+
+### STEP 7: AdSense審査前チェック（事前準備）
+- 免責事項ページあり
+- プライバシーポリシーあり
+- 運営者情報（問い合わせ導線）あり
+- 低品質な短文ページが多すぎない
+
+---
+
+## 11. 直近7日アクションプラン（迷ったらこの通り）
+
+### Day 1
+- リポジトリ作成
+- GitHub Pages公開
+- トップページ公開
+
+### Day 2
+- 初心者記事を2本公開
+
+### Day 3
+- 機種別ページを3本公開
+
+### Day 4
+- 用語集ページ公開
+
+### Day 5
+- 初心者記事を追加2本
+
+### Day 6
+- 内部リンク改善（関連記事リンク追加）
+
+### Day 7
+- Search Consoleでインデックス確認
+- 翌週の投稿予定を作成
+
+この7日を終えると、改善サイクルに入る準備が整います。
+
+---
+
+## 12. いま開いている「Create a new repository」画面での設定（画像の状態から）
+
+あなたのスクリーンショットの画面なら、次の設定でOKです。
+
+1. **Repository name**: `slot-reset-guide`（そのままでOK）
+2. **Visibility**: `Public`（そのままでOK）
+3. **Add README**: `Off` のままでOK
+4. **Add .gitignore**: `No .gitignore` のままでOK
+5. **Add license**: `No license` のままでOK
+6. 緑の **Create repository** をクリック
+
+その後は、ローカル（あなたのPC）で以下を実行して公開できます。
+
+```bash
+# 1) 新しい作業フォルダを作る
+mkdir slot-reset-guide
+cd slot-reset-guide
+
+# 2) 最低限ファイルを作成（index.html / beginner.html / styles.css / disclaimer.html / privacy.html）
+
+# 3) Git 初期化して最初の公開
+git init
+git add .
+git commit -m "Initial site"
+git branch -M main
+git remote add origin https://github.com/<あなたのID>/slot-reset-guide.git
+git push -u origin main
+```
+
+最後に GitHub 側で **Settings → Pages → Deploy from a branch → main / root** を選べば公開されます。
+
+---
+
+## 13. 30分で終わる「次の一手」
+
+- 10分: リポジトリ作成（今の画面で完了）
+- 10分: 5ファイルを push（index / beginner / styles / disclaimer / privacy）
+- 10分: Pages を ON にしてURL確認
+
+ここまで終われば、あとは記事を増やすフェーズに入れます。
+=======
