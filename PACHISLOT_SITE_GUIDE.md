@@ -265,9 +265,7 @@
 mkdir slot-reset-guide
 cd slot-reset-guide
 
-# 2) このリポジトリに用意した starter_site をコピー
-# （このガイドと同じ構成の初期サイト）
-cp -R /workspace/calorienote/starter_site/* .
+# 2) 最低限ファイルを作成（index.html / beginner.html / styles.css / disclaimer.html / privacy.html）
 
 # 3) Git 初期化して最初の公開
 git init
@@ -285,7 +283,7 @@ git push -u origin main
 ## 13. 30分で終わる「次の一手」
 
 - 10分: リポジトリ作成（今の画面で完了）
-- 10分: `starter_site` を push
+- 10分: 5ファイルを push（index / beginner / styles / disclaimer / privacy）
 - 10分: Pages を ON にしてURL確認
 
 ここまで終われば、あとは記事を増やすフェーズに入れます。
